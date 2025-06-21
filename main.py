@@ -9,10 +9,9 @@ import base64
 app = Flask(__name__)
 update_event = threading.Condition()
 users = {}
-SECRET_KEY = ""
-RSA = RSA_SYSTEM(4096)
 
-logging.basicConfig(level=logging.DEBUG)
+
+logging.basicConfig(level=logging.ERROR)
 
 def ensure_public_keys():
     os.makedirs("static", exist_ok=True)
@@ -211,11 +210,12 @@ def process():
 
 if os.path.isfile('users.pkl'):
     users = load_dict_pickle('users.pkl')
-    print("Loaded dictionary:", users)
+    print("Loaded dictionary")
 else:
     users = {}
 
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
+    RSA = RSA_SYSTEM(4096)
     ensure_public_keys() # Ensure public keys are available
     app.run(debug=True, threaded=True, host='0.0.0.0', port=5421)
