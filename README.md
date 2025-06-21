@@ -132,5 +132,5 @@ MIT License — feel free to use and modify.
 
 ## 🧠 Credits
 
-Created by **Drake Donnison / Allycat @ AllTigWelding**
+Created by **Drake Donnison**
 This project is designed for learning, prototyping, and securely starting web projects with built-in cryptography.
