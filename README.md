@@ -30,6 +30,13 @@ cd flask-encrypted-template
 ### 2. Install and or Create and Activate a Virtual Environment (Recommended)
 
 Install Python 3.11
+```bash
+windows: https://www.python.org/
+```
+
+```bash
+Linux/macOS: sudo apt install -y python3.11 python3.11-venv python3.11-dev
+```
 
 ```bash
 # Windows
