@@ -1,0 +1,137 @@
+/* Default Table Styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background: black;
+    
+}
+
+body::before {
+/* Create a "layer" that displays behind the content */
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    /* Place your background image */
+    background-color: #ffffff;
+    background-size: cover;
+
+    /* Apply the blur to the image only */
+    filter: blur(8px);
+
+    /* Ensure it's behind all other content */
+    z-index: -1;
+}
+
+table {
+    width: 100%;
+    max-width: 600px; /* Keeps table from stretching too wide */
+    border-collapse: collapse;
+    margin: 20px auto;
+    background: #fff;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+    white-space: wrap;
+}
+
+th {
+    background-color: #f4f4f4;
+}
+
+/* Responsive Design for Mobile */
+@media screen and (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    thead tr {
+        display: none; /* Hide header row */
+    }
+
+    tr {
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        padding: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        background: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    td {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        white-space: normal; /* Allow text to wrap */
+    }
+
+    td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        padding-right: 10px;
+    }
+}
+
+.icon-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: left; /* Ensures images go left-to-right */
+    gap: 20px; /* Space between images */
+    max-width: 100%;
+    padding: 20px;
+}
+
+.icon-container img {
+    width: 90px; 
+    height: 90px;
+    object-fit: scale-down;
+}
+
+@media screen and (max-width: 600px) {
+    .icon-container img {
+        width: 70px; 
+        height: 70px;
+    }
+}
+
+.loading-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+}
+.loading-container {
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+}
+
+.item {
+cursor: pointer;
+}
+
+/* Tooltip is hidden by default */
+.tooltip {
+display: none;
+z-index: 999;
+}
+
+/* When the checkbox is checked, display the .tooltip */
+.toggle-tooltip:checked ~ .tooltip {
+display: block;
+}
