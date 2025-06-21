@@ -27,7 +27,9 @@ git clone https://github.com/your-username/flask-encrypted-template.git
 cd flask-encrypted-template
 ```
 
-### 2. Create and Activate a Virtual Environment (Recommended)
+### 2. Install and or Create and Activate a Virtual Environment (Recommended)
+
+Install Python 3.11
 
 ```bash
 # Windows
