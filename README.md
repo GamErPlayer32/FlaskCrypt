@@ -11,8 +11,8 @@ A lightweight, secure Flask-based template using **AES-256** and **RSA-4096** en
 ## ✨ Features
 
 * 🔑 **AES-256 GCM + RSA-4096** Encryption System
-* 🧰 Built-in Key Generator for RSA and AES
-* 🌐 Flask Web App with Dynamic Page System (Jinja2 templates)
+* 🧰 Built-in Key Generator for RSA and AES (not third party pip install)
+* 🌐 Flask Web App with Dynamic Page System 
 * 📦 Easy to run on Windows or Linux
 * 📁 Organized, minimal template for quick project startup
 
