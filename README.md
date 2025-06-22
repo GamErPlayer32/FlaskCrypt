@@ -1,3 +1,8 @@
+# Notes on Uses
+if pushing for public uses please regenerate keys
+just delete them all if you have trouble run encryption.py manually
+
+
 # Portal
  Encrypted Webserver with Dynamic Pages
 
