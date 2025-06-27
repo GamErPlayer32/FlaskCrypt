@@ -5,7 +5,7 @@ import time, threading, re, hashlib, random, datetime, pickle, os, base64, hmac,
 from encrypt import RSA_SYSTEM, AES_SYSTEM
 import shutil
 import base64
-
+from security import check, deep_sanitize, validate_aes_params
 app = Flask(__name__)
 update_event = threading.Condition()
 users = {}
@@ -24,44 +24,156 @@ def home():
 
 @app.route('/api/security', methods=['POST'])
 def handle_encryptedkey():
-    data = request.get_json() # Get JSON data from the request
-    if not data or 'encrypted_key' not in data:
-        return jsonify({'error': 'Invalid request'}), 400
-    # Process the encrypted key
-    aes_key_bytes = RSA.rsa_decryption(int(data['encrypted_key'], 16))
+    """
+        # Exclude encrypted fields from sanitization because they contain encrypted binary data
+        # which could be corrupted if altered by sanitization routines.
+        excluded = {"encrypted_key", "iv", "sbox"}
+        data = request.get_json(force=True)
+        data = deep_sanitize(data, rules=["html", "sql", "security"], exclude_keys=excluded)
+        - iv: RSA-encrypted AES IV (hex string)
+        - sbox: RSA-encrypted AES SBOX (hex string)
+        - key_size: AES key size (128, 192, or 256)
+        - metadata: dict with at least 'id' (user ID) and 'timestamp'
 
-    aes_iv = RSA.rsa_decryption(int(data.get('iv', ''),16))
-    aes_size = data.get('key_size',256)
-    aes_sbox = RSA.rsa_decryption(int(data.get('sbox', ''), 16))
-    timestamp = data.get('metadata',[]).get('timestamp', '')
-    userID = data.get('metadata',[]).get('id', None)
-    if not userID:
-        return jsonify({'error': 'Missing required fields'}), 400
-    if isinstance(aes_key_bytes, str):
-        aes_key_bytes = aes_key_bytes.encode('latin1')  # fallback
-    key_array = list(aes_key_bytes)
-    iv_array = [int(aes_iv[i:i+2], 16) for i in range(0, len(aes_iv), 2)]
-    print("Decrypted key:", key_array)
-    if isinstance(aes_sbox, bytes):
-        aes_sbox = aes_sbox.decode('utf-8')
+    Returns:
+        - JSON response confirming key receipt or describing errors.
+    """
+    try:
+        # Skip sanitizing encrypted fields
+        excluded = {"encrypted_key", "iv", "sbox"}
+        data = request.get_json(force=True)
+        data = deep_sanitize(data, rules=["html", "sql", "security"], exclude_keys=excluded)
 
-    if len(aes_sbox) != 512:
-        raise ValueError(f"SBOX is not the correct length: {len(aes_sbox)}")
 
-    sbox_list = [int(aes_sbox[i:i+2], 16) for i in range(0, 512, 2)]
-    sbox = {i: sbox_list[i] for i in range(256)}
-    inv_sbox = {v: k for k, v in sbox.items()}
-    
-    users[userID]["aes"] = AES_SYSTEM(userID[:32], aes_size)
-    users[userID]["aes"].key = key_array  # not aes_key
-    users[userID]["aes"].iv = iv_array    # not aes_iv
-    users[userID]["aes"].sbox = sbox
-    users[userID]["aes"].inv_sbox = inv_sbox
-    users[userID]["aes"].round_keys = users[userID]["aes"]._expand_key(key_array)
-    users[userID]["aes"].save()
-    print(f"Received: {key_array} {iv_array} {timestamp}")
-    response = {'reply': f"AES KEY CONFIRMED: Timestamp: {timestamp}"}
-    return jsonify(response)
+        # old: data = request.get_json(force=True)
+        if not data or 'encrypted_key' not in data:
+            return jsonify({'error': 'Missing encrypted_key'}), 400
+
+        # Validate metadata
+        metadata = data.get('metadata', {})
+        if not isinstance(metadata, dict):
+            return jsonify({'error': 'Invalid metadata'}), 400
+        userID = metadata.get('id')
+        timestamp = metadata.get('timestamp', '')
+        if not userID:
+            return jsonify({'error': 'Missing user ID'}), 400
+
+        # Validate and decrypt encrypted_key
+        try:
+            encrypted_key = int(data['encrypted_key'], 16)
+            aes_key_bytes = RSA.rsa_decryption(encrypted_key)
+        except Exception as e:
+            logging.error(f"Key decryption failed: {e}")
+            return jsonify({'error': 'Key decryption failed'}), 400
+
+        # Validate and decrypt IV
+        try:
+            iv_hex = data.get('iv', '')
+            if not iv_hex:
+                return jsonify({'error': 'Missing IV'}), 400
+            aes_iv = RSA.rsa_decryption(int(iv_hex, 16))
+        except Exception as e:
+            logging.error(f"IV decryption failed: {e}")
+            return jsonify({'error': 'IV decryption failed'}), 400
+
+        # Validate and decrypt SBOX
+        try:
+            sbox_hex = data.get('sbox', '')
+            if not sbox_hex:
+                return jsonify({'error': 'Missing SBOX'}), 400
+            aes_sbox = RSA.rsa_decryption(int(sbox_hex, 16))
+        except Exception as e:
+            logging.error(f"SBOX decryption failed: {e}")
+            return jsonify({'error': 'SBOX decryption failed'}), 400
+
+        aes_size = data.get('key_size', 256)
+        if not isinstance(aes_size, int) or aes_size not in (128, 192, 256):
+            return jsonify({'error': 'Invalid key size'}), 400
+
+        # Convert key and IV to arrays
+        if isinstance(aes_key_bytes, str):
+            aes_key_bytes = aes_key_bytes.encode('latin1')
+        key_array = list(aes_key_bytes)
+
+        if isinstance(aes_iv, str):
+            try:
+                iv_array = [int(aes_iv[i:i+2], 16) for i in range(0, len(aes_iv), 2)]
+            except Exception:
+                return jsonify({'error': 'Invalid IV format'}), 400
+        else:
+            iv_array = list(aes_iv)
+
+        # SBOX processing
+        if isinstance(aes_sbox, bytes):
+            try:
+                aes_sbox = aes_sbox.decode('utf-8')
+            except Exception:
+                return jsonify({'error': 'Invalid SBOX encoding'}), 400
+
+        # Check SBOX length based on its type
+        if isinstance(aes_sbox, str):
+            if len(aes_sbox) != 512:
+                return jsonify({'error': f'SBOX hex string is not the correct length: {len(aes_sbox)}'}), 400
+            try:
+                sbox_list = [int(aes_sbox[i:i+2], 16) for i in range(0, 512, 2)]
+            except Exception:
+                return jsonify({'error': 'Invalid SBOX format'}), 400
+        elif isinstance(aes_sbox, (bytes, bytearray, list)):
+            if len(aes_sbox) != 256:
+                return jsonify({'error': f'SBOX bytes/list is not the correct length: {len(aes_sbox)}'}), 400
+            sbox_list = list(aes_sbox)
+        else:
+            return jsonify({'error': 'Invalid SBOX type'}), 400
+
+        sbox = {i: sbox_list[i] for i in range(256)}
+        inv_sbox = {v: k for k, v in sbox.items()}
+
+        # Only allow existing users to set keys
+        if not isinstance(sbox_list, list):
+            return jsonify({'error': 'Failed to parse AES SBOX'}), 400
+        if len(sbox_list) != 256:
+            return jsonify({'error': f'AES SBOX must have 256 entries, got {len(sbox_list)}'}), 400
+        # Validate AES parameters
+        if not isinstance(aes_key_bytes, (bytes, bytearray)):
+            return jsonify({'error': 'Invalid AES key format'}), 400
+        if not isinstance(aes_iv, (bytes, bytearray, list)):
+            return jsonify({'error': 'Invalid AES IV format'}), 400
+        if not isinstance(sbox_list, list) or len(sbox_list) != 256:
+            return jsonify({'error': 'Invalid AES SBOX format'}), 400
+        if not isinstance(aes_size, int) or aes_size not in (128, 192, 256):
+            return jsonify({'error': 'Invalid key size'}), 400
+        
+        error = validate_aes_params(aes_key_bytes, aes_iv, sbox_list, aes_size)
+        if error:
+            return error
+        
+        # Only update and save if parameters have changed
+        existing_aes = users[userID].get("aes")
+        existing_aes = users[userID].get("aes")
+        should_save = False
+        if not existing_aes or (
+            existing_aes.key != key_array or
+            existing_aes.iv != iv_array or
+            existing_aes.sbox != sbox or
+            existing_aes.inv_sbox != inv_sbox or
+            existing_aes.round_keys != AES_SYSTEM(userID[:32], aes_size)._expand_key(key_array)
+        ):
+            users[userID]["aes"] = AES_SYSTEM(userID[:32], aes_size)
+            users[userID]["aes"].key = key_array
+            users[userID]["aes"].iv = iv_array
+            users[userID]["aes"].sbox = sbox
+            users[userID]["aes"].inv_sbox = inv_sbox
+            users[userID]["aes"].round_keys = users[userID]["aes"]._expand_key(key_array)
+            users[userID]["aes"].save()
+        users[userID]["aes"].round_keys = users[userID]["aes"]._expand_key(key_array)
+        users[userID]["aes"].save()
+
+        logging.info(f"Received AES key for user {userID} at {timestamp}")
+        response = {'reply': f"AES KEY CONFIRMED: Timestamp: {timestamp}"}
+        return jsonify(response)
+    except Exception as e:
+        logging.error(f"Unexpected error in /api/security: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 def read_html_file(file_path,user_id):
     try:
@@ -215,7 +327,9 @@ else:
     users = {}
 
 
+# Initialize RSA at the module level so it's always available
+RSA = RSA_SYSTEM(4096)
+
 if __name__ == '__main__':
-    RSA = RSA_SYSTEM(4096)
     ensure_public_keys() # Ensure public keys are available
     app.run(debug=True, threaded=True, host='0.0.0.0', port=5421)

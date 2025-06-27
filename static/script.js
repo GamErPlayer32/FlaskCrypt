@@ -1,6 +1,4 @@
 // Output "Hello, World!" to the console
-console.log("Hello, World!");
-
 
 // Function to load RSA exponent and modulus from files
 /**

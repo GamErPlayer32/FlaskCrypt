@@ -1,0 +1,13 @@
+# Ignore the RSA private key
+saves/private/rsa_d.key
+
+# Ignore the users folder and all its contents
+users/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+users.pkl
+.vscode/
