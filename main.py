@@ -290,8 +290,6 @@ def process():
     input_type_b64 = data.get('type')
     value_b64 = data.get('value')
 
-    print(f"Processing: {input_type_b64} {value_b64}")
-    
     aes = AES_SYSTEM(user_id[:32], 256)
     aes.load()
 
@@ -304,13 +302,15 @@ def process():
     except Exception as e:
         print(f"Decryption error: {e}")
         return jsonify({'error': 'Decryption failed'}), 400
-
-    print(f"Decrypted: {decrypted_type} {decrypted_value}")
     
     if decrypted_type == 'keyup':
+        users[user_id]["message"] = read_html_file("default_blank.html",user_id)
         users[user_id]["message"] = update_based_location(user_id)
+
     elif decrypted_type == 'keydown':
+        users[user_id]["message"] = read_html_file("default_blank.html",user_id)
         users[user_id]["message"] = update_based_location(user_id)
+        
     elif decrypted_type == 'name': # Update Users Name
         users[user_id]["name"] = remove_html_tags(f"{decrypted_value}")
         users[user_id]["message"] = update_based_location(user_id)
@@ -326,8 +326,7 @@ def process():
         users[user_id]["message"] = read_html_file("default_blank.html",user_id)
         update_users()
     
-    
-    return "update"
+    return jsonify({'status': 'success'}), 200
 
 
 if os.path.isfile('users.pkl'):
@@ -342,4 +341,4 @@ if __name__ == '__main__':
     # Initialize RSA system
     RSA = RSA_SYSTEM(4096)
     ensure_public_keys() # Ensure public keys are available
-    app.run(debug=True, threaded=True, host='0.0.0.0', port=5421)
+    app.run(debug=False, threaded=True, host='0.0.0.0', port=5421)
