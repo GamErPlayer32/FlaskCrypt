@@ -58,6 +58,16 @@ def handle_encryptedkey():
         if not userID:
             return jsonify({'error': 'Missing user ID'}), 400
 
+        # Initialize user if not exists
+        if userID not in users:
+            users[userID] = {
+                "message": "",
+                "lastmessage": "",
+                "name": "",
+                "location": "home",
+                "joined": False
+            }
+
         # Validate and decrypt encrypted_key
         try:
             encrypted_key = int(data['encrypted_key'], 16)
@@ -136,14 +146,14 @@ def handle_encryptedkey():
         # Validate AES parameters
         if not isinstance(aes_key_bytes, (bytes, bytearray)):
             return jsonify({'error': 'Invalid AES key format'}), 400
-        if not isinstance(aes_iv, (bytes, bytearray, list)):
+        if not isinstance(iv_array, list):
             return jsonify({'error': 'Invalid AES IV format'}), 400
         if not isinstance(sbox_list, list) or len(sbox_list) != 256:
             return jsonify({'error': 'Invalid AES SBOX format'}), 400
         if not isinstance(aes_size, int) or aes_size not in (128, 192, 256):
             return jsonify({'error': 'Invalid key size'}), 400
         
-        error = validate_aes_params(aes_key_bytes, aes_iv, sbox_list, aes_size)
+        error = validate_aes_params(aes_key_bytes, iv_array, sbox_list, aes_size)
         if error:
             return error
         
@@ -327,9 +337,9 @@ else:
     users = {}
 
 
-# Initialize RSA at the module level so it's always available
-RSA = RSA_SYSTEM(4096)
 
 if __name__ == '__main__':
+    # Initialize RSA system
+    RSA = RSA_SYSTEM(4096)
     ensure_public_keys() # Ensure public keys are available
     app.run(debug=True, threaded=True, host='0.0.0.0', port=5421)

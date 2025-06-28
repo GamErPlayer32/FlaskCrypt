@@ -11,3 +11,5 @@ __pycache__/
 
 users.pkl
 .vscode/
+.venv/
+

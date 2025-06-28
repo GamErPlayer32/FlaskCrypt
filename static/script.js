@@ -53,7 +53,8 @@ async function main() {
     const encryptedSbox = rsa_encrypt(sboxHex, rsaExponent, rsaModulus);
     const encryptedKey = rsa_encrypt_bytes(keyBytes, rsaExponent, rsaModulus);
     const encryptedIV = rsa_encrypt(ivHex, rsaExponent, rsaModulus)
-    sendMessageToFlask('/api/security', null, {
+    
+    const payload = {
         encrypted_key: encryptedKey,
         iv: encryptedIV,
         key_size: aesSystem.keyBits,
@@ -62,7 +63,12 @@ async function main() {
           id: userId, 
           timestamp: Date.now() 
         }
-    });
+    };
+    
+    console.log('Sending payload:', payload);
+    console.log('Payload size in JSON:', JSON.stringify(payload).length);
+    
+    sendMessageToFlask('/api/security', null, payload);
     
     // Start listening for streaming updates
     startListening(userId)
