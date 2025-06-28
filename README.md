@@ -109,12 +109,15 @@ project/
 
 ---
 
-## 🛠 Customization
+## 🛠 TODO
 
-You can:
+Push (Server to User)
+Pull (User to Server)
 
-* Extend the encryption system in `encrypt.py`
-* Add new dynamic routes in `main.py`
+* Push HTML Sections with Encrypted MSGS
+* Push Multiple Seperate Streams (update only one when pushing allowing different Sections to be pushed) Minimize Pushed Data
+* Pull Files from User store in user after checking file .pdf / .jpg / .png / .wpeg (and any other)
+* Push Files per User over Encrypted Passage
 
 ---
 
