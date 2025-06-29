@@ -187,7 +187,7 @@ def handle_encryptedkey():
 
 def read_html_file(file_path,user_id):
     try:
-        with open("blobs/"+file_path, 'r', encoding='utf-8') as file:
+        with open("pageTemplates/"+file_path, 'r', encoding='utf-8') as file:
             return file.read().replace('\n','')
     except FileNotFoundError:
         return "Error: File not found."
@@ -302,14 +302,14 @@ def process():
     except Exception as e:
         print(f"Decryption error: {e}")
         return jsonify({'error': 'Decryption failed'}), 400
-    
+    print(f"Decrypted type: {decrypted_type}, value: {decrypted_value}")
     if decrypted_type == 'keyup':
-        users[user_id]["message"] = read_html_file("default_blank.html",user_id)
-        users[user_id]["message"] = update_based_location(user_id)
+        users[user_id]["message"] = read_html_file("test1.html",user_id)
+        update_users()
 
     elif decrypted_type == 'keydown':
-        users[user_id]["message"] = read_html_file("default_blank.html",user_id)
-        users[user_id]["message"] = update_based_location(user_id)
+        users[user_id]["message"] = read_html_file("test2.html",user_id)
+        update_users()
         
     elif decrypted_type == 'name': # Update Users Name
         users[user_id]["name"] = remove_html_tags(f"{decrypted_value}")
@@ -321,10 +321,6 @@ def process():
         update_users()
     elif decrypted_type == "sendmsg":
         users[user_id]["message"] = update_based_location(user_id)
-       
-    else:
-        users[user_id]["message"] = read_html_file("default_blank.html",user_id)
-        update_users()
     
     return jsonify({'status': 'success'}), 200
 

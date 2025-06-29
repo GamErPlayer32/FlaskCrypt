@@ -391,7 +391,7 @@ function startListening(userId = localStorage.getItem("userId")) {
       const outputDiv = document.getElementById('output');
       outputDiv.innerHTML = `
           <div style="border: 2px solid black; padding: 10px; margin-top: 10px; background-color: #ffffff !important;">
-              ${newData}
+              <p>Updated</p>${newData}
           </div>
       `;
 
