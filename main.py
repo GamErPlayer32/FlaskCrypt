@@ -310,18 +310,6 @@ def process():
     elif decrypted_type == 'keydown':
         users[user_id]["message"] = read_html_file("test2.html",user_id)
         update_users()
-        
-    elif decrypted_type == 'name': # Update Users Name
-        users[user_id]["name"] = remove_html_tags(f"{decrypted_value}")
-        users[user_id]["message"] = update_based_location(user_id)
-        update_users()
-    elif decrypted_type == 'move': # Change Application Location
-        users[user_id]['location'] = decrypted_value
-        users[user_id]["message"] = update_based_location(user_id)
-        update_users()
-    elif decrypted_type == "sendmsg":
-        users[user_id]["message"] = update_based_location(user_id)
-    
     return jsonify({'status': 'success'}), 200
 
 
